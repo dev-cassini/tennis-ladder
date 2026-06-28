@@ -1,0 +1,35 @@
+<section class="dashboard">
+  <div class="dashboard__panel">
+    <div class="dashboard__header">
+      <div>
+        <p class="eyebrow">Authenticated session</p>
+        <h1>Your account is connected.</h1>
+      </div>
+
+      <button type="button" (click)="logOut()">Log out</button>
+    </div>
+
+    <p class="body-copy">
+      This page proves the Angular app can sign in with Auth0 and call the protected ASP.NET Core
+      `/api/me` endpoint with a bearer token.
+    </p>
+
+    @if (auth.user$ | async; as authUser) {
+      <div class="grid">
+        <article class="card">
+          <h2>Auth0 profile</h2>
+          <pre>{{ authUser | json }}</pre>
+        </article>
+
+        <article class="card">
+          <h2>API user bootstrap</h2>
+          @if (currentUser$ | async; as currentUser) {
+            <pre>{{ currentUser | json }}</pre>
+          } @else {
+            <p>Loading current user from API...</p>
+          }
+        </article>
+      </div>
+    }
+  </div>
+</section>

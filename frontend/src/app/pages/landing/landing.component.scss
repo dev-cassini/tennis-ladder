@@ -1,0 +1,123 @@
+:host {
+  display: block;
+}
+
+.hero {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top, rgba(236, 255, 220, 0.8), transparent 35%),
+    linear-gradient(160deg, #f7f2e8 0%, #eff5ef 55%, #dceec7 100%);
+}
+
+.hero__panel {
+  width: min(100%, 42rem);
+  padding: 3rem;
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(17, 42, 24, 0.12);
+  box-shadow: 0 24px 80px rgba(27, 62, 38, 0.12);
+  backdrop-filter: blur(16px);
+}
+
+.eyebrow {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #456a2c;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 8vw, 4.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.lede {
+  margin: 1.5rem 0 0;
+  max-width: 34rem;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #395244;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+button,
+.dashboard-link {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.95rem 1.4rem;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+button:hover,
+.dashboard-link:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: #1f5f35;
+  color: #f8ffef;
+  box-shadow: 0 14px 30px rgba(31, 95, 53, 0.24);
+}
+
+.secondary {
+  background: #ffffff;
+  color: #17331d;
+  border: 1px solid rgba(23, 51, 29, 0.12);
+}
+
+.status-card {
+  margin-top: 2rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(23, 51, 29, 0.12);
+}
+
+.status-label {
+  margin: 0;
+  font-weight: 700;
+  color: #456a2c;
+}
+
+.dashboard-link {
+  background: #eaf4de;
+  color: #17331d;
+}
+
+.link-button {
+  padding-inline: 0;
+  background: transparent;
+  color: #395244;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 1.25rem;
+  }
+
+  .hero__panel {
+    padding: 2rem;
+  }
+}

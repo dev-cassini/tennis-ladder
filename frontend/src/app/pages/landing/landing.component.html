@@ -1,0 +1,23 @@
+<section class="hero">
+  <div class="hero__panel">
+    <p class="eyebrow">Tennis Ladder MVP</p>
+    <h1>Run a ladder without the spreadsheet chaos.</h1>
+    <p class="lede">
+      This starter app wires up account creation, email and password login, Google SSO,
+      and an authenticated handoff into the .NET API.
+    </p>
+
+    <div class="actions">
+      <button type="button" class="primary" (click)="signUp()">Create account</button>
+      <button type="button" class="secondary" (click)="logIn()">Log in</button>
+    </div>
+
+    @if (auth.isAuthenticated$ | async) {
+      <div class="status-card">
+        <p class="status-label">Signed in</p>
+        <a routerLink="/app" class="dashboard-link">Open dashboard</a>
+        <button type="button" class="link-button" (click)="logOut()">Log out</button>
+      </div>
+    }
+  </div>
+</section>
