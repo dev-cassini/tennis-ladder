@@ -15,10 +15,12 @@ export class DashboardComponent {
   protected readonly currentUser$ = inject(CurrentUserService).currentUser$;
 
   protected logOut(): void {
-    void this.auth.logout({
-      logoutParams: {
-        returnTo: window.location.origin
-      }
-    });
+    this.auth
+      .logout({
+        logoutParams: {
+          returnTo: window.location.origin
+        }
+      })
+      .subscribe();
   }
 }

@@ -38,6 +38,7 @@ builder.Services
     {
         options.Authority = $"https://{auth0Domain}/";
         options.Audience = auth0Audience;
+        options.MapInboundClaims = false;
     });
 
 builder.Services.AddAuthorizationBuilder()
@@ -59,11 +60,21 @@ app.MapGet("/health", async (AppDbContext dbContext, CancellationToken cancellat
 }).AllowAnonymous();
 
 app.MapGet("/api/me", async (
+    HttpContext httpContext,
     ClaimsPrincipal principal,
     UserBootstrapService userBootstrapService,
     CancellationToken cancellationToken) =>
 {
-    var currentUser = await userBootstrapService.ResolveCurrentUserAsync(principal, cancellationToken);
+    var accessToken = httpContext.Request.Headers.Authorization
+        .ToString()
+        .Replace("Bearer ", string.Empty, StringComparison.OrdinalIgnoreCase)
+        .Trim();
+
+    var currentUser = await userBootstrapService.ResolveCurrentUserAsync(
+        principal,
+        accessToken,
+        auth0Domain,
+        cancellationToken);
 
     return Results.Ok(new
     {

@@ -13,29 +13,35 @@ export class LandingComponent {
   protected readonly auth = inject(AuthService);
 
   protected signUp(): void {
-    void this.auth.loginWithRedirect({
-      authorizationParams: {
-        screen_hint: 'signup'
-      },
-      appState: {
-        target: '/app'
-      }
-    });
+    this.auth
+      .loginWithRedirect({
+        authorizationParams: {
+          screen_hint: 'signup'
+        },
+        appState: {
+          target: '/app'
+        }
+      })
+      .subscribe();
   }
 
   protected logIn(): void {
-    void this.auth.loginWithRedirect({
-      appState: {
-        target: '/app'
-      }
-    });
+    this.auth
+      .loginWithRedirect({
+        appState: {
+          target: '/app'
+        }
+      })
+      .subscribe();
   }
 
   protected logOut(): void {
-    void this.auth.logout({
-      logoutParams: {
-        returnTo: window.location.origin
-      }
-    });
+    this.auth
+      .logout({
+        logoutParams: {
+          returnTo: window.location.origin
+        }
+      })
+      .subscribe();
   }
 }
