@@ -1,23 +1,219 @@
-<section class="hero">
-  <div class="hero__panel">
-    <p class="eyebrow">Tennis Ladder MVP</p>
-    <h1>Run a ladder without the spreadsheet chaos.</h1>
-    <p class="lede">
-      This starter app wires up account creation, email and password login, Google SSO,
-      and an authenticated handoff into the .NET API.
-    </p>
+<div class="landing" id="top">
+  <section class="hero">
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="Tennis Ladder home">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span>Tennis Ladder</span>
+      </a>
 
-    <div class="actions">
-      <button type="button" class="primary" (click)="signUp()">Create account</button>
-      <button type="button" class="secondary" (click)="logIn()">Log in</button>
+      <div class="nav-links">
+        <a href="#how-it-works">How it works</a>
+        <a href="#rules">The rules</a>
+      </div>
+
+      <div class="nav-actions">
+        @if (auth.isAuthenticated$ | async) {
+          <a routerLink="/app" class="nav-dashboard">Dashboard</a>
+        } @else {
+          <button type="button" class="nav-login" (click)="logIn()">Log in</button>
+        }
+      </div>
+    </nav>
+
+    <div class="hero-court" aria-hidden="true">
+      <span class="court-line court-line--vertical"></span>
+      <span class="court-line court-line--horizontal"></span>
+      <span class="court-circle"></span>
     </div>
 
-    @if (auth.isAuthenticated$ | async) {
-      <div class="status-card">
-        <p class="status-label">Signed in</p>
-        <a routerLink="/app" class="dashboard-link">Open dashboard</a>
-        <button type="button" class="link-button" (click)="logOut()">Log out</button>
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow eyebrow--light"><span></span> Built for club competition</p>
+        <h1>Keep your ladder <em>in motion.</em></h1>
+        <p class="hero-lede">
+          Set the opening order, manage challenges, confirm results, and let the rankings
+          update themselves.
+        </p>
+
+        <div class="hero-actions">
+          @if (auth.isAuthenticated$ | async) {
+            <a routerLink="/app" class="button button--lime">Open your dashboard</a>
+            <button type="button" class="button button--ghost" (click)="logOut()">Log out</button>
+          } @else {
+            <button type="button" class="button button--lime" (click)="signUp()">
+              Create an account
+            </button>
+            <button type="button" class="button button--ghost" (click)="logIn()">Log in</button>
+          }
+        </div>
+
+        <div class="hero-notes" role="list" aria-label="Account and ladder features">
+          <span role="listitem">Email or Google</span>
+          <span role="listitem">Fixed fair rules</span>
+          <span role="listitem">Automatic standings</span>
+        </div>
       </div>
-    }
-  </div>
-</section>
+
+      <div class="ladder-stage" role="img" aria-label="Example tennis ladder standings">
+        <div class="result-ticket">
+          <span class="result-ticket__status">Confirmed</span>
+          <strong>Jordan def. Blake</strong>
+          <span>6–4, 3–6, 10–7</span>
+        </div>
+
+        <article class="ladder-board">
+          <header class="ladder-board__header">
+            <div>
+              <p>Saturday singles</p>
+              <h2>Club ladder</h2>
+            </div>
+            <span class="live-badge"><i></i> Live</span>
+          </header>
+
+          <ol class="standings-list">
+            <li class="standing standing--one">
+              <span class="standing__rank">01</span>
+              <span class="standing__player"><strong>Alex Morgan</strong><small>8 wins</small></span>
+              <span class="standing__movement standing__movement--still">—</span>
+            </li>
+            <li class="standing standing--mover">
+              <span class="standing__rank">02</span>
+              <span class="standing__player"><strong>Jordan Lee</strong><small>Last played today</small></span>
+              <span class="standing__movement standing__movement--up">↑ 2</span>
+            </li>
+            <li class="standing standing--three">
+              <span class="standing__rank">03</span>
+              <span class="standing__player"><strong>Blake Evans</strong><small>5 wins</small></span>
+              <span class="standing__movement standing__movement--down">↓ 1</span>
+            </li>
+            <li class="standing standing--four">
+              <span class="standing__rank">04</span>
+              <span class="standing__player"><strong>Casey Smith</strong><small>4 wins</small></span>
+              <span class="standing__movement standing__movement--still">—</span>
+            </li>
+          </ol>
+
+          <footer class="ladder-board__footer">
+            <span>12 players</span>
+            <span>Updated just now</span>
+          </footer>
+        </article>
+
+        <span class="tennis-ball tennis-ball--one" aria-hidden="true"></span>
+        <span class="tennis-ball tennis-ball--two" aria-hidden="true"></span>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section class="workflow section" id="how-it-works">
+      <div class="section-heading">
+        <p class="eyebrow"><span></span> From signup to first serve</p>
+        <h2>A ladder that runs without the spreadsheet.</h2>
+        <p>
+          Every part of the competition lives in one place, from the opening order to the
+          latest confirmed result.
+        </p>
+      </div>
+
+      <ol class="workflow-steps">
+        <li>
+          <span class="step-number">01</span>
+          <div class="step-icon" aria-hidden="true"><span class="mini-court"></span></div>
+          <h3>Build the ladder</h3>
+          <p>Add your players, set the order yourself, or let the app randomize it.</p>
+        </li>
+        <li>
+          <span class="step-number">02</span>
+          <div class="step-icon step-icon--challenge" aria-hidden="true">↗</div>
+          <h3>Play the challenge</h3>
+          <p>Players challenge up the ladder and either competitor can submit the score.</p>
+        </li>
+        <li>
+          <span class="step-number">03</span>
+          <div class="step-icon step-icon--result" aria-hidden="true">✓</div>
+          <h3>Confirm and move</h3>
+          <p>Once the opponent confirms, the standings update automatically.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="roles section" aria-labelledby="roles-title">
+      <div class="roles-heading">
+        <p class="eyebrow eyebrow--light"><span></span> One club, two views</p>
+        <h2 id="roles-title">Run it.<br />Play in it.</h2>
+      </div>
+
+      <div class="role role--organizer">
+        <span class="role-label">For organizers</span>
+        <h3>Less admin.<br />More tennis.</h3>
+        <ul>
+          <li>Create and launch the competition</li>
+          <li>Choose the opening player order</li>
+          <li>See every ranking in one view</li>
+        </ul>
+      </div>
+
+      <div class="role role--player">
+        <span class="role-label">For players</span>
+        <h3>Always know<br />your next move.</h3>
+        <ul>
+          <li>See your current ladder position</li>
+          <li>Challenge an eligible player above</li>
+          <li>Submit and confirm match results</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="rules section" id="rules">
+      <div class="rules-copy">
+        <p class="eyebrow"><span></span> Fair by design</p>
+        <h2>Simple rules. No courtside arguments.</h2>
+        <p>
+          Every ladder uses the same clear challenge rule, so players know exactly who they can
+          play and what happens next.
+        </p>
+
+        <div class="rule-facts">
+          <div><strong>2</strong><span>players above can be challenged</span></div>
+          <div><strong>1</strong><span>opponent confirmation required</span></div>
+          <div><strong>0</strong><span>manual ranking updates</span></div>
+        </div>
+      </div>
+
+      <div class="challenge-diagram" role="img" aria-label="A player in third place can challenge first or second place">
+        <div class="diagram-label">Eligible challenge range</div>
+        <div class="diagram-player diagram-player--target"><span>01</span><strong>Alex</strong><small>Can challenge</small></div>
+        <div class="diagram-player diagram-player--target"><span>02</span><strong>Jordan</strong><small>Can challenge</small></div>
+        <div class="diagram-player diagram-player--challenger"><span>03</span><strong>Casey</strong><small>Challenger</small></div>
+        <div class="challenge-path challenge-path--one" aria-hidden="true"></div>
+        <div class="challenge-path challenge-path--two" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="final-cta section">
+      <div class="final-cta__ball" aria-hidden="true"></div>
+      <p class="eyebrow"><span></span> Ready for first serve?</p>
+      <h2>Put your club<br />in the right order.</h2>
+      <p>Create the ladder today. The rankings can take it from there.</p>
+
+      <div class="final-actions">
+        @if (auth.isAuthenticated$ | async) {
+          <a routerLink="/app" class="button button--dark">Open your dashboard</a>
+        } @else {
+          <button type="button" class="button button--dark" (click)="signUp()">Create an account</button>
+          <button type="button" class="button button--outline-dark" (click)="logIn()">I already have an account</button>
+        }
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand brand--footer" href="#top">
+      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      <span>Tennis Ladder</span>
+    </a>
+    <p>Club competition, kept in motion.</p>
+    <span>Built for the next match.</span>
+  </footer>
+</div>
