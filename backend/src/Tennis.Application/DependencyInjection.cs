@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Tennis.Application.Auth;
 using Tennis.Application.Data;
+using Tennis.Application.Ladders;
 
 namespace Tennis.Application;
 
@@ -15,6 +16,7 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<UserBootstrapService>();
+        services.AddScoped<LadderAccessService>();
 
         return services;
     }
