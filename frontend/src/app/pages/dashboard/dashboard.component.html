@@ -2,34 +2,51 @@
   <div class="dashboard__panel">
     <div class="dashboard__header">
       <div>
-        <p class="eyebrow">Authenticated session</p>
-        <h1>Your account is connected.</h1>
+        <p class="eyebrow">Competition desk</p>
+        @if (auth.user$ | async; as authUser) {
+          <h1>Welcome back, {{ authUser.name ?? 'player' }}.</h1>
+        } @else {
+          <h1>Your tennis ladders.</h1>
+        }
       </div>
 
-      <button type="button" (click)="logOut()">Log out</button>
+      <div class="header-actions">
+        <a class="create-link" routerLink="/app/ladders/new">Create ladder</a>
+        <button type="button" (click)="logOut()">Log out</button>
+      </div>
     </div>
 
-    <p class="body-copy">
-      This page proves the Angular app can sign in with Auth0 and call the protected ASP.NET Core
-      `/api/me` endpoint with a bearer token.
-    </p>
+    <p class="body-copy">Create a new competition or pick up a draft where you left off.</p>
 
-    @if (auth.user$ | async; as authUser) {
-      <div class="grid">
-        <article class="card">
-          <h2>Auth0 profile</h2>
-          <pre>{{ authUser | json }}</pre>
-        </article>
-
-        <article class="card">
-          <h2>API user bootstrap</h2>
-          @if (currentUser$ | async; as currentUser) {
-            <pre>{{ currentUser | json }}</pre>
-          } @else {
-            <p>Loading current user from API...</p>
+    @if (ladders$ | async; as ladders) {
+      @if (ladders.length > 0) {
+        <div class="ladder-grid">
+          @for (ladder of ladders; track ladder.id) {
+            <a class="ladder-card" [routerLink]="['/app/ladders', ladder.id, 'setup']">
+              <div class="ladder-card__topline">
+                <span class="status" [class.status--active]="ladder.status === 'Active'">
+                  {{ ladder.status }}
+                </span>
+                <span>{{ ladder.playerCount }} players</span>
+              </div>
+              <h2>{{ ladder.name }}</h2>
+              <p>{{ ladder.roles.join(' + ') }}</p>
+              <span class="open-label">Open ladder &rarr;</span>
+            </a>
           }
-        </article>
-      </div>
+        </div>
+      } @else {
+        <section class="empty-state">
+          <span class="empty-state__mark">01</span>
+          <h2>Your first ladder starts here.</h2>
+          <p>Name the competition, add the players, and choose the opening order.</p>
+          <a class="create-link" routerLink="/app/ladders/new">Create your first ladder</a>
+        </section>
+      }
+    } @else if (loadError()) {
+      <p class="load-error" role="alert">{{ loadError() }}</p>
+    } @else {
+      <p class="loading">Loading your ladders...</p>
     }
   </div>
 </section>

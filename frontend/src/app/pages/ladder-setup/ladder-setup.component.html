@@ -1,0 +1,28 @@
+<main class="setup-shell">
+  <a class="back-link" routerLink="/app">&larr; Your ladders</a>
+
+  @if (setup$ | async; as setup) {
+    <header>
+      <div>
+        <p class="eyebrow">Draft ladder</p>
+        <h1>{{ setup.name }}</h1>
+      </div>
+      <span class="status">{{ setup.status }}</span>
+    </header>
+
+    <section class="next-card">
+      <span class="step-number">01</span>
+      <div>
+        <h2>Add the starting players</h2>
+        <p>The roster editor is the next part of this setup flow.</p>
+      </div>
+    </section>
+  } @else if (error()) {
+    <section class="error-card" role="alert">
+      <h1>Setup is unavailable</h1>
+      <p>{{ error() }}</p>
+    </section>
+  } @else {
+    <p class="loading">Loading ladder setup...</p>
+  }
+</main>

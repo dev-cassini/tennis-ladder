@@ -1,0 +1,35 @@
+<main class="page-shell">
+  <a class="back-link" routerLink="/app">&larr; Your ladders</a>
+
+  <section class="create-card">
+    <p class="eyebrow">New competition</p>
+    <h1>Name your ladder.</h1>
+    <p class="lede">You can add players and choose their starting order next.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label for="ladder-name">Ladder name</label>
+      <input
+        id="ladder-name"
+        type="text"
+        formControlName="name"
+        maxlength="120"
+        autocomplete="off"
+        placeholder="Saturday singles"
+      />
+
+      @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+        <p class="field-error">Enter a ladder name.</p>
+      } @else if (form.controls.name.touched && form.controls.name.hasError('maxlength')) {
+        <p class="field-error">Use 120 characters or fewer.</p>
+      }
+
+      @if (serverError()) {
+        <p class="form-error" role="alert">{{ serverError() }}</p>
+      }
+
+      <button type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Creating...' : 'Create ladder' }}
+      </button>
+    </form>
+  </section>
+</main>

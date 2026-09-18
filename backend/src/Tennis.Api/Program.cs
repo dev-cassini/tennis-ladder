@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Tennis.Api.Auth;
+using Tennis.Api.Endpoints;
 using Tennis.Application;
-using Tennis.Application.Auth;
 using Tennis.Application.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication(builder.Configuration);
+builder.Services.AddScoped<CurrentUserResolver>();
 
 builder.Services.AddCors(options =>
 {
@@ -61,20 +62,10 @@ app.MapGet("/health", async (AppDbContext dbContext, CancellationToken cancellat
 
 app.MapGet("/api/me", async (
     HttpContext httpContext,
-    ClaimsPrincipal principal,
-    UserBootstrapService userBootstrapService,
+    CurrentUserResolver currentUserResolver,
     CancellationToken cancellationToken) =>
 {
-    var accessToken = httpContext.Request.Headers.Authorization
-        .ToString()
-        .Replace("Bearer ", string.Empty, StringComparison.OrdinalIgnoreCase)
-        .Trim();
-
-    var currentUser = await userBootstrapService.ResolveCurrentUserAsync(
-        principal,
-        accessToken,
-        auth0Domain,
-        cancellationToken);
+    var currentUser = await currentUserResolver.ResolveAsync(httpContext, cancellationToken);
 
     return Results.Ok(new
     {
@@ -85,5 +76,7 @@ app.MapGet("/api/me", async (
         currentUser.Provider
     });
 });
+
+app.MapLadderEndpoints();
 
 app.Run();

@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<UserBootstrapService>();
         services.AddScoped<LadderAccessService>();
+        services.AddScoped<LadderService>();
 
         return services;
     }

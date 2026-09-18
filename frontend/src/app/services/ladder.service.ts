@@ -1,0 +1,23 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+
+import { environment } from '../../environments/environment';
+import { LadderSetup, LadderSummary } from '../models/ladder.model';
+
+@Injectable({ providedIn: 'root' })
+export class LadderService {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiBaseUrl}/api/ladders`;
+
+  getLadders() {
+    return this.http.get<LadderSummary[]>(this.baseUrl);
+  }
+
+  createLadder(name: string) {
+    return this.http.post<LadderSummary>(this.baseUrl, { name });
+  }
+
+  getSetup(ladderId: string) {
+    return this.http.get<LadderSetup>(`${this.baseUrl}/${ladderId}/setup`);
+  }
+}

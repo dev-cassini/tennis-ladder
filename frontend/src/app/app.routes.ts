@@ -1,17 +1,32 @@
 import { Routes } from '@angular/router';
 import { authGuardFn } from '@auth0/auth0-angular';
 
-import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { LandingComponent } from './pages/landing/landing.component';
-
 export const routes: Routes = [
   {
     path: '',
-    component: LandingComponent
+    loadComponent: () =>
+      import('./pages/landing/landing.component').then((module) => module.LandingComponent)
   },
   {
     path: 'app',
-    component: DashboardComponent,
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then((module) => module.DashboardComponent),
+    canActivate: [authGuardFn]
+  },
+  {
+    path: 'app/ladders/new',
+    loadComponent: () =>
+      import('./pages/create-ladder/create-ladder.component').then(
+        (module) => module.CreateLadderComponent
+      ),
+    canActivate: [authGuardFn]
+  },
+  {
+    path: 'app/ladders/:ladderId/setup',
+    loadComponent: () =>
+      import('./pages/ladder-setup/ladder-setup.component').then(
+        (module) => module.LadderSetupComponent
+      ),
     canActivate: [authGuardFn]
   },
   {
