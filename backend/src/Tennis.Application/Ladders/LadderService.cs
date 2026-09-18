@@ -94,6 +94,13 @@ public sealed class LadderService(AppDbContext dbContext)
                 "Only a ladder organizer can access setup.");
         }
 
+        if (ladder.Status != LadderStatus.Draft)
+        {
+            return LadderResult<LadderSetup>.Failure(
+                "ladder_active",
+                "This ladder has already launched.");
+        }
+
         var players = ladder.Memberships
             .Where(membership => membership.Role == LadderMembershipRole.Player)
             .OrderBy(membership => membership.Position)
@@ -176,18 +183,18 @@ public sealed class LadderService(AppDbContext dbContext)
         dbContext.LadderMemberships.RemoveRange(existingPlayers);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        for (var index = 0; index < requestedPlayers.Count; index++)
-        {
-            var requestedPlayer = requestedPlayers[index];
-            ladder.Memberships.Add(new LadderMembership
+        var newMemberships = requestedPlayers
+            .Select((requestedPlayer, index) => new LadderMembership
             {
+                LadderId = ladder.Id,
                 UserId = usersByEmail[normalizedEmails[index]].Id,
                 Role = LadderMembershipRole.Player,
                 DisplayName = requestedPlayer.DisplayName.Trim(),
                 Position = index + 1
-            });
-        }
+            })
+            .ToList();
 
+        dbContext.LadderMemberships.AddRange(newMemberships);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
@@ -250,6 +257,111 @@ public sealed class LadderService(AppDbContext dbContext)
         await transaction.CommitAsync(cancellationToken);
 
         return await GetSetupAsync(ladderId, userId, cancellationToken);
+    }
+
+    public async Task<LadderResult<LadderDetail>> LaunchAsync(
+        Guid ladderId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var accessResult = await GetOrganizerDraftAsync(ladderId, userId, cancellationToken);
+
+        if (!accessResult.IsSuccess)
+        {
+            return LadderResult<LadderDetail>.Failure(
+                accessResult.Error!.Code,
+                accessResult.Error.Message);
+        }
+
+        var ladder = accessResult.Value!;
+        var players = ladder.Memberships
+            .Where(membership => membership.Role == LadderMembershipRole.Player)
+            .OrderBy(membership => membership.Position)
+            .ToList();
+
+        if (players.Count < 2)
+        {
+            return LadderResult<LadderDetail>.Failure(
+                "launch_requirements_not_met",
+                "Add at least two players before launching the ladder.");
+        }
+
+        var expectedPositions = Enumerable.Range(1, players.Count);
+        var actualPositions = players.Select(player => player.Position!.Value);
+
+        if (!actualPositions.SequenceEqual(expectedPositions))
+        {
+            return LadderResult<LadderDetail>.Failure(
+                "launch_requirements_not_met",
+                "Save a complete starting order before launching the ladder.");
+        }
+
+        ladder.Status = LadderStatus.Active;
+        ladder.LaunchedUtc = DateTimeOffset.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetDetailAsync(ladderId, userId, cancellationToken);
+    }
+
+    public async Task<LadderResult<LadderDetail>> GetDetailAsync(
+        Guid ladderId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var ladder = await dbContext.Ladders
+            .Include(item => item.Memberships)
+            .ThenInclude(membership => membership.User)
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == ladderId, cancellationToken);
+
+        if (ladder is null)
+        {
+            return LadderResult<LadderDetail>.Failure("not_found", "Ladder not found.");
+        }
+
+        var currentMemberships = ladder.Memberships
+            .Where(membership => membership.UserId == userId)
+            .ToList();
+
+        if (currentMemberships.Count == 0)
+        {
+            return LadderResult<LadderDetail>.Failure(
+                "forbidden",
+                "You are not a member of this ladder.");
+        }
+
+        var isOrganizer = currentMemberships.Any(
+            membership => membership.Role == LadderMembershipRole.Organizer);
+
+        if (ladder.Status == LadderStatus.Draft && !isOrganizer)
+        {
+            return LadderResult<LadderDetail>.Failure(
+                "forbidden",
+                "Players can view the ladder after it launches.");
+        }
+
+        var standings = ladder.Memberships
+            .Where(membership => membership.Role == LadderMembershipRole.Player)
+            .OrderBy(membership => membership.Position)
+            .Select(membership => new LadderStanding(
+                membership.Id,
+                membership.UserId,
+                membership.DisplayName,
+                membership.Position!.Value,
+                membership.UserId == userId))
+            .ToList();
+        var roles = currentMemberships
+            .Select(membership => membership.Role.ToString())
+            .OrderBy(role => role)
+            .ToList();
+
+        return LadderResult<LadderDetail>.Success(new LadderDetail(
+            ladder.Id,
+            ladder.Name,
+            ladder.Status.ToString(),
+            ladder.LaunchedUtc,
+            roles,
+            standings));
     }
 
     private async Task<LadderResult<Ladder>> GetOrganizerDraftAsync(

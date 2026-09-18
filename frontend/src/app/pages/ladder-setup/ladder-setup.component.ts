@@ -2,11 +2,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { LadderPlayer, LadderSetup } from '../../models/ladder.model';
 import { LadderService } from '../../services/ladder.service';
+import { shuffled } from '../../shared/shuffle';
 
 type PlayerFormGroup = FormGroup<{
   displayName: FormControl<string>;
@@ -22,6 +23,7 @@ type PlayerFormGroup = FormGroup<{
 export class LadderSetupComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly ladderService = inject(LadderService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ladderId = this.route.snapshot.paramMap.get('ladderId') ?? '';
 
@@ -32,6 +34,8 @@ export class LadderSetupComponent implements OnInit {
   protected readonly orderError = signal('');
   protected readonly savingPlayers = signal(false);
   protected readonly savingOrder = signal(false);
+  protected readonly launching = signal(false);
+  protected readonly launchError = signal('');
   protected readonly rosterDirty = signal(false);
   protected readonly orderSaved = signal(true);
   protected readonly players = new FormArray<PlayerFormGroup>([]);
@@ -130,16 +134,7 @@ export class LadderSetupComponent implements OnInit {
   }
 
   protected randomizeOrder(): void {
-    const order = [...this.playerOrder()];
-
-    for (let index = order.length - 1; index > 0; index--) {
-      const randomValue = new Uint32Array(1);
-      crypto.getRandomValues(randomValue);
-      const targetIndex = Math.floor((randomValue[0] / 2 ** 32) * (index + 1));
-      [order[index], order[targetIndex]] = [order[targetIndex], order[index]];
-    }
-
-    this.playerOrder.set(order);
+    this.playerOrder.set(shuffled(this.playerOrder()));
     this.orderSaved.set(false);
     this.orderError.set('');
   }
@@ -168,6 +163,31 @@ export class LadderSetupComponent implements OnInit {
         },
         error: (error: HttpErrorResponse) => {
           this.orderError.set(this.extractError(error, 'We could not save the player order.'));
+        }
+      });
+  }
+
+  protected canLaunch(): boolean {
+    return !this.rosterDirty() && this.orderSaved() && this.playerOrder().length >= 2;
+  }
+
+  protected launch(): void {
+    if (!this.canLaunch() || this.launching()) {
+      return;
+    }
+
+    this.launchError.set('');
+    this.launching.set(true);
+    this.ladderService
+      .launchLadder(this.ladderId)
+      .pipe(
+        finalize(() => this.launching.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: (ladder) => void this.router.navigate(['/app/ladders', ladder.id]),
+        error: (error: HttpErrorResponse) => {
+          this.launchError.set(this.extractError(error, 'We could not launch this ladder.'));
         }
       });
   }

@@ -153,6 +153,31 @@
         }
       }
     </section>
+
+    <section class="launch-card">
+      <div>
+        <p class="eyebrow">Final check</p>
+        <h2>Ready for first serve?</h2>
+        <p>Launching locks this starting roster and makes the standings visible to every player.</p>
+      </div>
+
+      <button
+        class="launch-button"
+        type="button"
+        [disabled]="!canLaunch() || launching()"
+        (click)="launch()"
+      >
+        {{ launching() ? 'Launching...' : 'Launch ladder' }}
+      </button>
+
+      @if (!canLaunch()) {
+        <p class="launch-hint">Save at least two players and their starting order to continue.</p>
+      }
+
+      @if (launchError()) {
+        <p class="form-error" role="alert">{{ launchError() }}</p>
+      }
+    </section>
   } @else if (error()) {
     <section class="error-card" role="alert">
       <h1>Setup is unavailable</h1>

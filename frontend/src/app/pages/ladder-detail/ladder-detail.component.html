@@ -1,0 +1,48 @@
+<main class="ladder-shell">
+  <a class="back-link" routerLink="/app">&larr; Your ladders</a>
+
+  @if (ladder$ | async; as ladder) {
+    <header>
+      <div>
+        <p class="eyebrow">Live standings</p>
+        <h1>{{ ladder.name }}</h1>
+        @if (ladder.launchedUtc) {
+          <p class="launched-date">Launched {{ ladder.launchedUtc | date: 'd MMMM y' }}</p>
+        }
+      </div>
+      <div class="header-meta">
+        <span class="status">{{ ladder.status }}</span>
+        <span>{{ ladder.roles.join(' + ') }}</span>
+      </div>
+    </header>
+
+    <section class="standings-card">
+      <div class="card-heading">
+        <div>
+          <p class="eyebrow">Current order</p>
+          <h2>The ladder</h2>
+        </div>
+        <span>{{ ladder.standings.length }} players</span>
+      </div>
+
+      <ol>
+        @for (standing of ladder.standings; track standing.membershipId) {
+          <li [class.current-player]="standing.isCurrentUser">
+            <span class="position">{{ standing.position }}</span>
+            <strong>{{ standing.displayName }}</strong>
+            @if (standing.isCurrentUser) {
+              <span class="you-label">You</span>
+            }
+          </li>
+        }
+      </ol>
+    </section>
+  } @else if (error()) {
+    <section class="error-card" role="alert">
+      <h1>Ladder unavailable</h1>
+      <p>{{ error() }}</p>
+    </section>
+  } @else {
+    <p class="loading">Loading standings...</p>
+  }
+</main>

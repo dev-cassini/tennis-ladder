@@ -28,6 +28,21 @@ public sealed record LadderSetup(
     string Status,
     IReadOnlyList<LadderPlayerSummary> Players);
 
+public sealed record LadderStanding(
+    Guid MembershipId,
+    Guid UserId,
+    string DisplayName,
+    int Position,
+    bool IsCurrentUser);
+
+public sealed record LadderDetail(
+    Guid Id,
+    string Name,
+    string Status,
+    DateTimeOffset? LaunchedUtc,
+    IReadOnlyList<string> Roles,
+    IReadOnlyList<LadderStanding> Standings);
+
 public sealed record LadderError(
     string Code,
     string Message,

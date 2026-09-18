@@ -22,7 +22,14 @@
       @if (ladders.length > 0) {
         <div class="ladder-grid">
           @for (ladder of ladders; track ladder.id) {
-            <a class="ladder-card" [routerLink]="['/app/ladders', ladder.id, 'setup']">
+            <a
+              class="ladder-card"
+              [routerLink]="
+                ladder.status === 'Draft'
+                  ? ['/app/ladders', ladder.id, 'setup']
+                  : ['/app/ladders', ladder.id]
+              "
+            >
               <div class="ladder-card__topline">
                 <span class="status" [class.status--active]="ladder.status === 'Active'">
                   {{ ladder.status }}
@@ -31,7 +38,9 @@
               </div>
               <h2>{{ ladder.name }}</h2>
               <p>{{ ladder.roles.join(' + ') }}</p>
-              <span class="open-label">Open ladder &rarr;</span>
+              <span class="open-label">
+                {{ ladder.status === 'Draft' ? 'Resume setup' : 'View standings' }} &rarr;
+              </span>
             </a>
           }
         </div>

@@ -20,3 +20,20 @@ export interface LadderSetup {
   status: 'Draft' | 'Active';
   players: LadderPlayer[];
 }
+
+export interface LadderStanding {
+  membershipId: string;
+  userId: string;
+  displayName: string;
+  position: number;
+  isCurrentUser: boolean;
+}
+
+export interface LadderDetail {
+  id: string;
+  name: string;
+  status: 'Draft' | 'Active';
+  launchedUtc: string | null;
+  roles: Array<'Organizer' | 'Player'>;
+  standings: LadderStanding[];
+}

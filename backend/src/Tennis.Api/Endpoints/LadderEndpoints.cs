@@ -96,6 +96,42 @@ public static class LadderEndpoints
                 : ToErrorResult(result.Error!);
         });
 
+        ladders.MapPost("/{ladderId:guid}/launch", async (
+            Guid ladderId,
+            HttpContext httpContext,
+            CurrentUserResolver currentUserResolver,
+            LadderService ladderService,
+            CancellationToken cancellationToken) =>
+        {
+            var currentUser = await currentUserResolver.ResolveAsync(httpContext, cancellationToken);
+            var result = await ladderService.LaunchAsync(
+                ladderId,
+                currentUser.Id,
+                cancellationToken);
+
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : ToErrorResult(result.Error!);
+        });
+
+        ladders.MapGet("/{ladderId:guid}", async (
+            Guid ladderId,
+            HttpContext httpContext,
+            CurrentUserResolver currentUserResolver,
+            LadderService ladderService,
+            CancellationToken cancellationToken) =>
+        {
+            var currentUser = await currentUserResolver.ResolveAsync(httpContext, cancellationToken);
+            var result = await ladderService.GetDetailAsync(
+                ladderId,
+                currentUser.Id,
+                cancellationToken);
+
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : ToErrorResult(result.Error!);
+        });
+
         return endpoints;
     }
 

@@ -4,4 +4,7 @@
     <Project Path="src/Tennis.Application/Tennis.Application.csproj" />
     <Project Path="src/Tennis.Domain/Tennis.Domain.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Tennis.Application.Tests/Tennis.Application.Tests.csproj" />
+  </Folder>
 </Solution>

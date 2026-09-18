@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { environment } from '../../environments/environment';
-import { LadderSetup, LadderSummary } from '../models/ladder.model';
+import { LadderDetail, LadderSetup, LadderSummary } from '../models/ladder.model';
 
 @Injectable({ providedIn: 'root' })
 export class LadderService {
@@ -32,5 +32,13 @@ export class LadderService {
     return this.http.put<LadderSetup>(`${this.baseUrl}/${ladderId}/order`, {
       membershipIds
     });
+  }
+
+  launchLadder(ladderId: string) {
+    return this.http.post<LadderDetail>(`${this.baseUrl}/${ladderId}/launch`, {});
+  }
+
+  getLadder(ladderId: string) {
+    return this.http.get<LadderDetail>(`${this.baseUrl}/${ladderId}`);
   }
 }

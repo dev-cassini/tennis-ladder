@@ -30,6 +30,14 @@ export const routes: Routes = [
     canActivate: [authGuardFn]
   },
   {
+    path: 'app/ladders/:ladderId',
+    loadComponent: () =>
+      import('./pages/ladder-detail/ladder-detail.component').then(
+        (module) => module.LadderDetailComponent
+      ),
+    canActivate: [authGuardFn]
+  },
+  {
     path: '**',
     redirectTo: ''
   }
