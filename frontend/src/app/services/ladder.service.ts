@@ -20,4 +20,17 @@ export class LadderService {
   getSetup(ladderId: string) {
     return this.http.get<LadderSetup>(`${this.baseUrl}/${ladderId}/setup`);
   }
+
+  replacePlayers(
+    ladderId: string,
+    players: Array<{ displayName: string; email: string }>
+  ) {
+    return this.http.put<LadderSetup>(`${this.baseUrl}/${ladderId}/players`, { players });
+  }
+
+  updatePlayerOrder(ladderId: string, membershipIds: string[]) {
+    return this.http.put<LadderSetup>(`${this.baseUrl}/${ladderId}/order`, {
+      membershipIds
+    });
+  }
 }

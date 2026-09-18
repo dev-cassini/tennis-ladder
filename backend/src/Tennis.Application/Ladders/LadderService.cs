@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using Tennis.Application.Auth;
 using Tennis.Application.Data;
 using Tennis.Domain.Entities;
@@ -7,6 +8,8 @@ namespace Tennis.Application.Ladders;
 
 public sealed class LadderService(AppDbContext dbContext)
 {
+    private static readonly EmailAddressAttribute EmailValidator = new();
+
     public async Task<LadderResult<LadderSummary>> CreateAsync(
         CurrentUserContext currentUser,
         CreateLadderRequest request,
@@ -108,6 +111,231 @@ public sealed class LadderService(AppDbContext dbContext)
             ladder.Status.ToString(),
             players));
     }
+
+    public async Task<LadderResult<LadderSetup>> ReplacePlayersAsync(
+        Guid ladderId,
+        Guid userId,
+        ReplacePlayersRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var accessResult = await GetOrganizerDraftAsync(ladderId, userId, cancellationToken);
+
+        if (!accessResult.IsSuccess)
+        {
+            return LadderResult<LadderSetup>.Failure(
+                accessResult.Error!.Code,
+                accessResult.Error.Message);
+        }
+
+        var requestedPlayers = request.Players ?? [];
+        var validationErrors = ValidatePlayers(requestedPlayers);
+
+        if (validationErrors.Count > 0)
+        {
+            return LadderResult<LadderSetup>.Failure(
+                "validation_error",
+                "Check the player list and try again.",
+                validationErrors);
+        }
+
+        var normalizedEmails = requestedPlayers
+            .Select(player => NormalizeEmail(player.Email))
+            .ToList();
+        var users = await dbContext.Users
+            .Where(user => normalizedEmails.Contains(user.Email.ToLower()))
+            .ToListAsync(cancellationToken);
+        var usersByEmail = users
+            .GroupBy(user => NormalizeEmail(user.Email))
+            .ToDictionary(group => group.Key, group => group.First());
+
+        for (var index = 0; index < requestedPlayers.Count; index++)
+        {
+            var email = normalizedEmails[index];
+
+            if (!usersByEmail.ContainsKey(email))
+            {
+                validationErrors[$"players.{index}.email"] =
+                    ["This email does not belong to an existing Tennis Ladder account."];
+            }
+        }
+
+        if (validationErrors.Count > 0)
+        {
+            return LadderResult<LadderSetup>.Failure(
+                "validation_error",
+                "Every player must have an existing account.",
+                validationErrors);
+        }
+
+        var ladder = accessResult.Value!;
+        var existingPlayers = ladder.Memberships
+            .Where(membership => membership.Role == LadderMembershipRole.Player)
+            .ToList();
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        dbContext.LadderMemberships.RemoveRange(existingPlayers);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        for (var index = 0; index < requestedPlayers.Count; index++)
+        {
+            var requestedPlayer = requestedPlayers[index];
+            ladder.Memberships.Add(new LadderMembership
+            {
+                UserId = usersByEmail[normalizedEmails[index]].Id,
+                Role = LadderMembershipRole.Player,
+                DisplayName = requestedPlayer.DisplayName.Trim(),
+                Position = index + 1
+            });
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return await GetSetupAsync(ladderId, userId, cancellationToken);
+    }
+
+    public async Task<LadderResult<LadderSetup>> UpdatePlayerOrderAsync(
+        Guid ladderId,
+        Guid userId,
+        UpdatePlayerOrderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var accessResult = await GetOrganizerDraftAsync(ladderId, userId, cancellationToken);
+
+        if (!accessResult.IsSuccess)
+        {
+            return LadderResult<LadderSetup>.Failure(
+                accessResult.Error!.Code,
+                accessResult.Error.Message);
+        }
+
+        var ladder = accessResult.Value!;
+        var players = ladder.Memberships
+            .Where(membership => membership.Role == LadderMembershipRole.Player)
+            .ToList();
+        var requestedIds = request.MembershipIds ?? [];
+        var requestedIdSet = requestedIds.ToHashSet();
+        var existingIdSet = players.Select(player => player.Id).ToHashSet();
+
+        if (requestedIds.Count != players.Count ||
+            requestedIdSet.Count != requestedIds.Count ||
+            !requestedIdSet.SetEquals(existingIdSet))
+        {
+            return LadderResult<LadderSetup>.Failure(
+                "validation_error",
+                "The saved order must contain every player exactly once.",
+                new Dictionary<string, string[]>
+                {
+                    ["membershipIds"] = ["Use every player exactly once."]
+                });
+        }
+
+        var playersById = players.ToDictionary(player => player.Id);
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        for (var index = 0; index < requestedIds.Count; index++)
+        {
+            playersById[requestedIds[index]].Position = requestedIds.Count + index + 1;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        for (var index = 0; index < requestedIds.Count; index++)
+        {
+            playersById[requestedIds[index]].Position = index + 1;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return await GetSetupAsync(ladderId, userId, cancellationToken);
+    }
+
+    private async Task<LadderResult<Ladder>> GetOrganizerDraftAsync(
+        Guid ladderId,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var ladder = await dbContext.Ladders
+            .Include(item => item.Memberships)
+            .SingleOrDefaultAsync(item => item.Id == ladderId, cancellationToken);
+
+        if (ladder is null)
+        {
+            return LadderResult<Ladder>.Failure("not_found", "Ladder not found.");
+        }
+
+        var isOrganizer = ladder.Memberships.Any(membership =>
+            membership.UserId == userId && membership.Role == LadderMembershipRole.Organizer);
+
+        if (!isOrganizer)
+        {
+            return LadderResult<Ladder>.Failure(
+                "forbidden",
+                "Only a ladder organizer can change setup.");
+        }
+
+        if (ladder.Status != LadderStatus.Draft)
+        {
+            return LadderResult<Ladder>.Failure(
+                "ladder_active",
+                "An active ladder can no longer be changed through setup.");
+        }
+
+        return LadderResult<Ladder>.Success(ladder);
+    }
+
+    private static Dictionary<string, string[]> ValidatePlayers(
+        IReadOnlyList<DraftPlayerRequest> players)
+    {
+        var errors = new Dictionary<string, string[]>();
+        var emailIndexes = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
+
+        for (var index = 0; index < players.Count; index++)
+        {
+            var player = players[index];
+            var displayName = player.DisplayName?.Trim() ?? string.Empty;
+            var email = player.Email?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                errors[$"players.{index}.displayName"] = ["Enter the player's name."];
+            }
+            else if (displayName.Length > 200)
+            {
+                errors[$"players.{index}.displayName"] = ["Use 200 characters or fewer."];
+            }
+
+            if (!EmailValidator.IsValid(email))
+            {
+                errors[$"players.{index}.email"] = ["Enter a valid email address."];
+                continue;
+            }
+
+            var normalizedEmail = NormalizeEmail(email);
+
+            if (!emailIndexes.TryGetValue(normalizedEmail, out var indexes))
+            {
+                indexes = [];
+                emailIndexes[normalizedEmail] = indexes;
+            }
+
+            indexes.Add(index);
+        }
+
+        foreach (var duplicate in emailIndexes.Where(pair => pair.Value.Count > 1))
+        {
+            foreach (var index in duplicate.Value)
+            {
+                errors[$"players.{index}.email"] = ["Each player email can appear only once."];
+            }
+        }
+
+        return errors;
+    }
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
     private static LadderSummary ToSummary(Ladder ladder, Guid userId)
     {

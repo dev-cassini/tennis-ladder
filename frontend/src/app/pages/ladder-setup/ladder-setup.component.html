@@ -1,28 +1,164 @@
 <main class="setup-shell">
   <a class="back-link" routerLink="/app">&larr; Your ladders</a>
 
-  @if (setup$ | async; as setup) {
+  @if (setup(); as currentSetup) {
     <header>
       <div>
         <p class="eyebrow">Draft ladder</p>
-        <h1>{{ setup.name }}</h1>
+        <h1>{{ currentSetup.name }}</h1>
       </div>
-      <span class="status">{{ setup.status }}</span>
+      <span class="status">{{ currentSetup.status }}</span>
     </header>
 
-    <section class="next-card">
-      <span class="step-number">01</span>
-      <div>
-        <h2>Add the starting players</h2>
-        <p>The roster editor is the next part of this setup flow.</p>
+    <section class="setup-card">
+      <div class="section-heading">
+        <span class="step-number">01</span>
+        <div>
+          <h2>Starting players</h2>
+          <p>Add people who already have a Tennis Ladder account.</p>
+        </div>
       </div>
+
+      <form (ngSubmit)="savePlayers()" novalidate>
+        <div class="player-list">
+          @for (player of players.controls; track player; let index = $index) {
+            <div class="player-row" [formGroup]="player">
+              <span class="row-number">{{ index + 1 }}</span>
+
+              <label>
+                <span>Name</span>
+                <input
+                  type="text"
+                  formControlName="displayName"
+                  maxlength="200"
+                  autocomplete="name"
+                  (input)="markRosterDirty()"
+                />
+                @if (player.controls.displayName.touched && player.controls.displayName.invalid) {
+                  <small>Enter the player's name.</small>
+                }
+              </label>
+
+              <label>
+                <span>Email</span>
+                <input
+                  type="email"
+                  formControlName="email"
+                  autocomplete="email"
+                  (input)="markRosterDirty()"
+                />
+                @if (player.controls.email.touched && player.controls.email.invalid) {
+                  <small>Enter a valid email address.</small>
+                } @else if (hasDuplicateEmail(index)) {
+                  <small>That email is already in the list.</small>
+                }
+              </label>
+
+              <button
+                class="icon-button remove-button"
+                type="button"
+                [attr.aria-label]="'Remove player ' + (index + 1)"
+                (click)="removePlayer(index)"
+              >
+                &times;
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button class="secondary-button" type="button" (click)="addPlayer()">+ Add player</button>
+          <button class="primary-button" type="submit" [disabled]="savingPlayers() || !rosterDirty()">
+            {{ savingPlayers() ? 'Saving players...' : 'Save players' }}
+          </button>
+        </div>
+
+        @if (playerError()) {
+          <p class="form-error" role="alert">{{ playerError() }}</p>
+        }
+      </form>
+    </section>
+
+    <section class="setup-card" [class.setup-card--muted]="rosterDirty()">
+      <div class="section-heading section-heading--split">
+        <div class="section-heading__title">
+          <span class="step-number">02</span>
+          <div>
+            <h2>Starting order</h2>
+            <p>Move players deliberately or let chance decide.</p>
+          </div>
+        </div>
+
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="rosterDirty() || playerOrder().length < 2"
+          (click)="randomizeOrder()"
+        >
+          Randomize
+        </button>
+      </div>
+
+      @if (rosterDirty()) {
+        <p class="locked-note">Save the player list to arrange the opening order.</p>
+      } @else if (playerOrder().length === 0) {
+        <p class="locked-note">Add at least two players before launch.</p>
+      } @else {
+        <ol class="order-list">
+          @for (player of playerOrder(); track player.membershipId; let index = $index) {
+            <li>
+              <span class="rank">{{ index + 1 }}</span>
+              <span class="player-identity">
+                <strong>{{ player.displayName }}</strong>
+                <small>{{ player.email }}</small>
+              </span>
+              <span class="order-actions">
+                <button
+                  class="icon-button"
+                  type="button"
+                  [disabled]="index === 0"
+                  [attr.aria-label]="'Move ' + player.displayName + ' up'"
+                  (click)="movePlayer(index, -1)"
+                >
+                  &uarr;
+                </button>
+                <button
+                  class="icon-button"
+                  type="button"
+                  [disabled]="index === playerOrder().length - 1"
+                  [attr.aria-label]="'Move ' + player.displayName + ' down'"
+                  (click)="movePlayer(index, 1)"
+                >
+                  &darr;
+                </button>
+              </span>
+            </li>
+          }
+        </ol>
+
+        <div class="order-save">
+          <span>{{ orderSaved() ? 'Order saved' : 'Unsaved order changes' }}</span>
+          <button
+            class="primary-button"
+            type="button"
+            [disabled]="orderSaved() || savingOrder()"
+            (click)="saveOrder()"
+          >
+            {{ savingOrder() ? 'Saving order...' : 'Save order' }}
+          </button>
+        </div>
+
+        @if (orderError()) {
+          <p class="form-error" role="alert">{{ orderError() }}</p>
+        }
+      }
     </section>
   } @else if (error()) {
     <section class="error-card" role="alert">
       <h1>Setup is unavailable</h1>
       <p>{{ error() }}</p>
     </section>
-  } @else {
+  } @else if (loading()) {
     <p class="loading">Loading ladder setup...</p>
   }
 </main>

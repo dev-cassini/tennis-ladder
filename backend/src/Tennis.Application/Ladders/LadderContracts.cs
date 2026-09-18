@@ -2,6 +2,12 @@ namespace Tennis.Application.Ladders;
 
 public sealed record CreateLadderRequest(string Name);
 
+public sealed record DraftPlayerRequest(string DisplayName, string Email);
+
+public sealed record ReplacePlayersRequest(IReadOnlyList<DraftPlayerRequest> Players);
+
+public sealed record UpdatePlayerOrderRequest(IReadOnlyList<Guid> MembershipIds);
+
 public sealed record LadderSummary(
     Guid Id,
     string Name,
